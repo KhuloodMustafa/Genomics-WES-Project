@@ -256,11 +256,12 @@ The pipeline processes FASTQ files through alignment, variant calling, annotatio
 - **Description**: Performs per-sample variant calling, combines gVCFs, and conducts joint genotyping, using an exome interval file to restrict analysis to targeted regions.
 - **Code**:
   ```bash
-  #!/bin/bash
-  WORKDIR=$(pwd)
-  REF=$WORKDIR/hg19.fa
-  INTERVALS=$WORKDIR/intervals.list
-  SAMPLES=(father mother proband)
+#!/bin/bash
+
+# Absolute path to your working directory
+WORKDIR=$(pwd)
+REF=$WORKDIR/hg19.fa
+SAMPLES=(father)
 
 # HaplotypeCaller for each sample
 for SAMPLE in "${SAMPLES[@]}"; do
@@ -293,9 +294,8 @@ docker run -v $WORKDIR:/data -w /data \
   -O /data/trio.vcf.gz
 
 echo "Variant calling complete!"
-
   ```
-- **Explanation**: Uses GATK’s `HaplotypeCaller` to generate per-sample gVCFs, combines them with `GenomicsDBImport`, and performs joint genotyping with `GenotypeGVCFs`, restricting all steps to exome regions using `-L intervals.list`.
+- **Explanation**: Converts the exome BED file to a Picard-style `.interval_list` using `BedToIntervalList`, then uses GATK’s `HaplotypeCaller` to generate per-sample gVCFs, combines them with `GenomicsDBImport`, and performs joint genotyping with `GenotypeGVCFs`, restricting all steps to exome regions using `-L intervals.list`.
 - **Output**: `intervals.list`, `${sample}.g.vcf.gz`, `${sample}.g.vcf.gz.tbi`, `trio_db`, `trio.vcf.gz`, `trio.vcf.gz.tbi`
 - **Command**:
   ```bash
