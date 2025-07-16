@@ -256,40 +256,39 @@ The pipeline processes FASTQ files through alignment, variant calling, annotatio
 - **Description**: Performs per-sample variant calling, combines gVCFs, and conducts joint genotyping, using an exome interval file to restrict analysis to targeted regions.
 - **Code**:
   ```bash
-#!/bin/bash
-WORKDIR=$(pwd)
-REF=$WORKDIR/hg19.fa
-SAMPLES=(father mother propand)
+  #!/bin/bash
+  WORKDIR=$(pwd)
+  REF=$WORKDIR/hg19.fa
+  SAMPLES=(father mother propand)
 
-for SAMPLE in "${SAMPLES[@]}"; do
-  echo "Running HaplotypeCaller for $SAMPLE..."
+  for SAMPLE in "${SAMPLES[@]}"; do
+    echo "Running HaplotypeCaller for $SAMPLE..."
+    docker run -v $WORKDIR:/data -w /data \
+      broadinstitute/gatk:latest gatk --java-options "-Xmx6g" HaplotypeCaller \
+      -R /data/hg19.fa \
+      -I /data/${SAMPLE}_dedup.bam \
+      -O /data/${SAMPLE}.g.vcf.gz \
+      -ERC GVCF
+    echo "HaplotypeCaller complete for $SAMPLE"
+  done
+
+  echo "Combining gVCFs..."
   docker run -v $WORKDIR:/data -w /data \
-    broadinstitute/gatk:latest gatk --java-options "-Xmx6g" HaplotypeCaller \
+    broadinstitute/gatk:latest gatk --java-options "-Xmx6g" GenomicsDBImport \
     -R /data/hg19.fa \
-    -I /data/${SAMPLE}_dedup.bam \
-    -O /data/${SAMPLE}.g.vcf.gz \
-    -ERC GVCF
-  echo "HaplotypeCaller complete for $SAMPLE"
-done
+    -V /data/father.g.vcf.gz \
+    -V /data/mother.g.vcf.gz \
+    -V /data/proband.g.vcf.gz \
+    -L /data/intervals.list \
+    --genomicsdb-workspace-path /data/trio_db
 
-echo "Combining gVCFs..."
-docker run -v $WORKDIR:/data -w /data \
-  broadinstitute/gatk:latest gatk --java-options "-Xmx6g" GenomicsDBImport \
-  -R /data/hg19.fa \
-  -V /data/father.g.vcf.gz \
-  -V /data/mother.g.vcf.gz \
-  -V /data/proband.g.vcf.gz \
-  -L /data/intervals.list \
-  --genomicsdb-workspace-path /data/trio_db
-
-echo "Running joint genotyping..."
-docker run -v $WORKDIR:/data -w /data \
-  broadinstitute/gatk:latest gatk GenotypeGVCFs \
-  -R /data/hg19.fa \
-  -V gendb:///data/trio_db \
-  -O /data/trio.vcf.gz
-
-echo "Variant calling complete!"
+  echo "Running joint genotyping..."
+  docker run -v $WORKDIR:/data -w /data \
+    broadinstitute/gatk:latest gatk GenotypeGVCFs \
+    -R /data/hg19.fa \
+    -V gendb:///data/trio_db \
+    -O /data/trio.vcf.gz
+  echo "Variant calling complete!"
   ```
 - **Explanation**: Converts the exome BED file to a Picard-style `.interval_list` using `BedToIntervalList`, then uses GATK’s `HaplotypeCaller` to generate per-sample gVCFs, combines them with `GenomicsDBImport`, and performs joint genotyping with `GenotypeGVCFs`, restricting all steps to exome regions using `-L intervals.list`.
 - **Output**: `intervals.list`, `${sample}.g.vcf.gz`, `${sample}.g.vcf.gz.tbi`, `trio_db`, `trio.vcf.gz`, `trio.vcf.gz.tbi`
