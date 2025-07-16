@@ -257,13 +257,10 @@ The pipeline processes FASTQ files through alignment, variant calling, annotatio
 - **Code**:
   ```bash
 #!/bin/bash
-
-# Absolute path to your working directory
 WORKDIR=$(pwd)
 REF=$WORKDIR/hg19.fa
-SAMPLES=(father)
+SAMPLES=(father mother propand)
 
-# HaplotypeCaller for each sample
 for SAMPLE in "${SAMPLES[@]}"; do
   echo "Running HaplotypeCaller for $SAMPLE..."
   docker run -v $WORKDIR:/data -w /data \
@@ -275,7 +272,6 @@ for SAMPLE in "${SAMPLES[@]}"; do
   echo "HaplotypeCaller complete for $SAMPLE"
 done
 
-# Joint Genotyping
 echo "Combining gVCFs..."
 docker run -v $WORKDIR:/data -w /data \
   broadinstitute/gatk:latest gatk --java-options "-Xmx6g" GenomicsDBImport \
