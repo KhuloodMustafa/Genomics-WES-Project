@@ -191,10 +191,9 @@ The pipeline processes FASTQ files through alignment, variant calling, annotatio
   ```bash
   for sample in father mother proband; do
     samtools sort ${sample}_filtered.bam -o ${sample}_filtered_sorted.bam
-    samtools index ${sample}_filtered_sorted.bam
   done
   ```
-- **Explanation**: Sorts BAM files by coordinate using `samtools sort` and creates index files with `samtools index`.
+- **Explanation**: Sorts BAM files by coordinate using `samtools sort`.
 - **Output**: `${sample}_filtered_sorted.bam`, `${sample}_filtered_sorted.bam.bai`
 - **Command**:
   ```bash
@@ -369,8 +368,6 @@ The pipeline processes FASTQ files through alignment, variant calling, annotatio
   MOTHER="mother"
   AR_VCF="autosomal_recessive_candidates.vcf"
   AR_TSV="autosomal_recessive_candidates.tsv"
-  CH_TEMP="compound_het_temp.vcf"
-  CH_TSV="compound_het_candidates.tsv"
   echo "Running autosomal recessive filtering..."
   bcftools view \
       -s "$FATHER,$MOTHER,$PROBAND" \
